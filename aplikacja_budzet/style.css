@@ -1,0 +1,216 @@
+body {
+	background-color: #041825;
+	color: #efefef;
+	font-size: 20px;
+	font-family: 'Open Sans', sans-serif;
+}
+
+#container {
+	width: 1200px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#logo {
+	color: white;
+	margin-top: 20px;
+	font-size: 36px;
+	letter-spacing: 3px;
+	text-align: center;
+	text-transform: uppercase;
+}
+
+#topnav {
+	background-color: #1c74b2;
+	text-align: center;
+}
+
+.menu {
+	margin-top: 20px;
+	color: #ffffff;
+	padding: 10px;
+	text-align: center;
+}
+
+.menu>li {
+	display: inline-block;
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.menu a:hover {
+	color: #041825;
+	cursor: pointer;
+}
+
+.menu a {
+	color: #fff;
+	text-decoration: none;
+}
+
+#content {
+	color: white;
+	padding: 10px;
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+button {
+	cursor: pointer;
+}
+
+.container1 {
+	margin-left: auto;
+	margin-right: auto;
+	display: flex;
+	justify-content: center;
+	padding: 10px;
+}
+
+.tile1 {
+	margin: 10px;
+	width: 230px;
+	height: 140px;
+	float: left;
+	text-align: center;
+	padding: 15px 0px 0px 0px;
+	border: medium solid #2084c2;
+	border-radius: 15px;
+}
+
+.tile1:hover {
+	background-color: #2084c2;
+}
+
+.tile2 {
+	margin: 10px;
+	width: 230px;
+	height: 140px;
+	float: left;
+	text-align: center;
+	padding: 15px 0px 0px 0px;
+	border: medium solid #ad3d3d;
+	border-radius: 15px;
+}
+
+.tile2:hover {
+	background-color: #ad3d3d;
+}
+
+.tile3 {
+	margin: 10px;
+	width: 480px;
+	height: 140px;
+	text-align: center;
+	clear: both;
+	padding: 15px 0px 0px 0px;
+	display: flex;
+	justify-content: center;
+	border: medium solid #82b637;
+	border-radius: 15px;
+}
+
+.tile3:hover {
+	background-color: #82b637;
+}
+
+.tile4 {
+	margin: 10px;
+	width: 230px;
+	height: 140px;
+	text-align: center;
+	float: left;
+	padding: 15px 0px 0px 0px;
+	border: medium solid #555555;
+	border-radius: 15px;
+}
+
+.tile4:hover {
+	background-color: #555555;
+}
+
+.tile5 {
+	margin: 10px;
+	width: 230px;
+	height: 140px;
+	text-align: center;
+	float: left;
+	padding: 15px 0px 0px 0px;
+	border: medium solid black;
+	border-radius: 15px;
+}
+
+.tile5:hover {
+	background-color: black;
+}
+
+a.tilelink {
+	color: #ffffff;
+	text-decoration: none;
+	display: block;
+	width: 230px;
+	height: 142px;
+}
+
+table {
+	width: 800px;
+	border-collapse: collapse;
+	border-radius: 10px;
+	margin-top: 30px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+table,
+th,
+td {
+	border: 2px solid white;
+}
+
+th,
+td {
+	padding: 10px;
+	text-align: center;
+}
+
+#income th {
+	background-color: #2084c2;
+}
+
+.title_table {
+	font-size: 32px;
+	color: white;
+	letter-spacing: 2px;
+	font-weight: bold;
+	padding: 10px 0px 0px 70px;
+}
+
+#expense th {
+	background-color: #ad3d3d;
+}
+
+#income th {
+	font-weight: bold;
+	color: white;
+}
+
+#term {
+width: 400px;
+  height: 160px;
+  text-align: left;
+  padding: 15px 10px 0px 10px;
+  border: medium solid #82b637;
+  border-radius: 15px;
+}
+
+#wybierz_okres{
+	background: linear-gradient(
+		rgba(255, 255, 255, 0),
+		rgba(255, 255, 255, 0)
+	);
+	border: none;
+	border-radius: 18px;
+	font-size: 24px;
+	color: white;
+}
+

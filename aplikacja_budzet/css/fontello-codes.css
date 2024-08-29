@@ -1,0 +1,8 @@
+
+.icon-user:before { content: '\e800'; } /* '' */
+.icon-off:before { content: '\e801'; } /* '' */
+.icon-plus-outline:before { content: '\e802'; } /* '' */
+.icon-minus-outline:before { content: '\e803'; } /* '' */
+.icon-cogs:before { content: '\e804'; } /* '' */
+.icon-chart-bar:before { content: '\e805'; } /* '' */
+.icon-user-plus:before { content: '\f234'; } /* '' */
