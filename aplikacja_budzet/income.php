@@ -12,13 +12,24 @@ mysqli_report(MYSQLI_REPORT_STRICT);
 $success_message = "";
 $errors = [];
 
+// Initialize variables to store user input and errors
+$amount = '';
+$date_of_income = date('Y-m-d'); // Set to today's date by default
+$income_category = '';
+$income_comment = '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $everything_OK = true;
 
     $user_id = $_SESSION['id'];
 
+    // Assign POST data to variables
+    $amount = $_POST['amount'] ?? '';
+    $date_of_income = $_POST['date_of_income'] ?? date('Y-m-d'); // Use today's date if not set
+    $income_category = $_POST['income_category'] ?? '';
+    $income_comment = $_POST['income_comment'] ?? '';
+
     // Validate amount
-    $amount = $_POST['amount'];
     $amount = str_replace(',', '.', $amount);
 
     if (!preg_match('/^\d{1,6}(\.\d{1,2})?$/', $amount)) {
@@ -27,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Validate date
-    $date_of_income = $_POST['date_of_income'];
     $date_format = 'Y-m-d';
     $date_object = DateTime::createFromFormat($date_format, $date_of_income);
 
@@ -35,19 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $everything_OK = false;
         $errors[] = "Podaj poprawną datę!";
     } else {
-        // Ensure that the date is properly formatted as Y-m-d
         $date_of_income = $date_object->format($date_format);
     }
 
     // Validate category
-    $income_category = $_POST['income_category'] ?? '';
     if (empty($income_category)) {
         $everything_OK = false;
         $errors[] = "Wybierz kategorię przychodu!";
     }
 
     // Validate comment
-    $income_comment = $_POST['income_comment'];
     if (strlen($income_comment) > 100) {
         $everything_OK = false;
         $errors[] = "Komentarz nie może przekraczać 100 znaków!";
@@ -76,13 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Add income to the database
             $insert_income = $connection->prepare("INSERT INTO incomes (user_id, income_category_assigned_to_user_id, amount, date_of_income, income_comment) VALUES (?, ?, ?, ?, ?)");
-            $insert_income->bind_param('iisss', $user_id, $income_category_assigned_to_user_id, $amount, $date_of_income, $income_comment); // Correct binding
+            $insert_income->bind_param('iisss', $user_id, $income_category_assigned_to_user_id, $amount, $date_of_income, $income_comment);
             if ($insert_income->execute()) {
                 $success_message = "Przychód został dodany pomyślnie!";
             } else {
                 throw new Exception("Błąd przy dodawaniu przychodu: " . $connection->error);
             }
-
 
             $connection->close();
         } catch (Exception $e) {
@@ -92,9 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
-
-
-
 
 <!DOCTYPE html>
 <html lang="pl">
@@ -106,7 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="keywords" content="przychody, wydatki, budżet, dom">
     <meta http-equiv="X-Ua-Compatible" content="IE=edge,chrome=1">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="main2.css">
     <link rel="stylesheet" href="css/fontello.css" type="text/css" />
     <link href='http://fonts.googleapis.com/css?family=Lato|Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
 
@@ -229,25 +231,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <div class="input-group">
                         <label for="amount">Kwota:</label>
-                        <input id="amount" type="text" name="amount" placeholder="Kwota przychodu" />
+                        <input id="amount" type="text" name="amount" placeholder="Kwota przychodu" value="<?php echo htmlspecialchars($amount); ?>" />
                     </div>
 
                     <div class="input-group">
                         <label for="date_of_income">Data:</label>
-                        <input id="date_of_income" type="date" name="date_of_income" placeholder="Data przychodu" />
+                        <input id="date_of_income" type="date" name="date_of_income" placeholder="Data przychodu" value="<?php echo htmlspecialchars($date_of_income); ?>" />
                     </div>
 
                     <br>
                     <label>Kategoria przychodu:</br></br></label>
                     <div class="checkbox-container">
-                        <div><input type="radio" id="paycheck" name="income_category" value="Paycheck"><label for="paycheck">Wypłata</label></div>
-                        <div><input type="radio" id="investments" name="income_category" value="Investments"><label for="investments">Inwestycje</label></div>
-                        <div><input type="radio" id="passiveIncome" name="income_category" value="Passive income"><label for="passiveIncome">Dochód pasywny</label></div>
-                        <div><input type="radio" id="another" name="income_category" value="Another"><label for="another">Inne</label></div>
+                        <div><input type="radio" id="paycheck" name="income_category" value="Paycheck" <?php if ($income_category == 'Paycheck') echo 'checked'; ?>><label for="paycheck">Wypłata</label></div>
+                        <div><input type="radio" id="investments" name="income_category" value="Investments" <?php if ($income_category == 'Investments') echo 'checked'; ?>><label for="investments">Inwestycje</label></div>
+                        <div><input type="radio" id="passiveIncome" name="income_category" value="Passive income" <?php if ($income_category == 'Passive income') echo 'checked'; ?>><label for="passiveIncome">Dochód pasywny</label></div>
+                        <div><input type="radio" id="another" name="income_category" value="Another" <?php if ($income_category == 'Another') echo 'checked'; ?>><label for="another">Inne</label></div>
                     </div>
 
                     <label for="income_comment"></br>Komentarz:</br></br></label>
-                    <textarea id="income_comment" type="text" name="income_comment" rows="4" placeholder="Dodaj komentarz do przychodu (opcjonalnie)"></textarea>
+                    <textarea id="income_comment" type="text" name="income_comment" rows="4" placeholder="Dodaj komentarz do przychodu (opcjonalnie)"><?php echo htmlspecialchars($income_comment); ?></textarea>
 
                     <div class="buttons">
                         <input type="submit" value="Dodaj przychód">

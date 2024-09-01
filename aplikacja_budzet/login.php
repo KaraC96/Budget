@@ -22,9 +22,63 @@ if ((isset($_SESSION['logged_in'])) && ($_SESSION['logged_in'] == true)) {
     <meta http-equiv="X-Ua-Compatible" content="IE=edge,chrome=1">
 
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="css/fontello.css" type="text/css" />
     <link href='https://fonts.googleapis.com/css?family=Lato|Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+
+    <style>
+        form {
+            background: linear-gradient(to left,
+                    rgba(255, 255, 255, 0.5),
+                    rgba(255, 255, 255, 0.5));
+            width: 200vw;
+            max-width: 300px;
+            padding: 36px 24px;
+            border-radius: 15px;
+            box-shadow: 0px 8px 24px 0 rgba(54, 54, 54);
+            font-size: 20px;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .label_conteiner {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        input,
+        button {
+            background: linear-gradient(to left,
+                    rgba(255, 255, 255, 0.5),
+                    rgba(255, 255, 255, 0.5));
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0px 8px 24px 0 rgb(95, 94, 94);
+            padding: 12px 24px;
+            font-size: 24px;
+            color: #1b4864;
+        }
+
+        input {
+            width: 250px;
+        }
+
+        label {
+            color: rgba(70, 86, 116, 0.5);
+            cursor: text;
+            left: 24px;
+            opacity: 1;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        input:focus+label,
+        input:not(:placeholder-shown)+label {
+            left: 200px;
+            opacity: 0;
+        }
+    </style>
 
 </head>
 

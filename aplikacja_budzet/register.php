@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 // Validate input data only if the form has been submitted
@@ -22,16 +21,19 @@ if (isset($_POST['email'])) {
         $_SESSION['e_age'] = "Podaj poprawny wiek (liczba od 1 do 100)!";
     }
 
-    // Assign and format the country
-    $country = $_POST['country'];
-    $formatted_country = ucwords(strtolower(trim($country)));
-    $_SESSION['fr_country'] = $country;
+    // Assign and format the country (no validation needed if optional)
+    $country = isset($_POST['country']) ? $_POST['country'] : '';
+    $formatted_country = !empty($country) ? ucwords(strtolower(trim($country))) : NULL;
 
-    // Validate URL
-    $url = $_POST['url'];
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        $everything_OK = false;
-        $_SESSION['e_url'] = "Podaj poprawny adres URL!";
+    // Validate URL (only if it's provided)
+    if (isset($_POST['url']) && $_POST['url'] !== '') {
+        $url = $_POST['url'];
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            $everything_OK = false;
+            $_SESSION['e_url'] = "Podaj poprawny adres URL!";
+        }
+    } else {
+        $url = NULL; // Set URL to NULL if not provided
     }
 
     // Validate passwords
@@ -79,8 +81,7 @@ if (isset($_POST['email'])) {
 
             if ($everything_OK == true) {
                 // Hooray, all tests passed, let's add the user to the database
-
-                if ($connection->query("INSERT INTO users VALUES (NULL, '$email', '$password_hash',  '$age', '$formatted_country', '$url', NOW(), NOW())")) {
+                if ($connection->query("INSERT INTO users VALUES (NULL, '$email', '$password_hash', " . ($age ? "'$age'" : "NULL") . ", " . ($formatted_country ? "'$formatted_country'" : "NULL") . ", " . ($url ? "'$url'" : "NULL") . ", NOW(), NOW())")) {
                     // Get the ID of the newly registered user
                     $user_id = $connection->insert_id;
 
@@ -105,6 +106,7 @@ if (isset($_POST['email'])) {
                     if (!$connection->query($query)) {
                         throw new Exception($connection->error);
                     }
+
                     // Add default payment methods to the payment_methods_assigned_to_users table
                     $query = "
                         INSERT INTO payment_methods_assigned_to_users (user_id, name)
@@ -130,8 +132,8 @@ if (isset($_POST['email'])) {
         echo '<br />Informacja developerska: ' . $e;
     }
 }
-
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pl">
@@ -144,7 +146,6 @@ if (isset($_POST['email'])) {
     <meta http-equiv="X-Ua-Compatible" content="IE=edge,chrome=1">
 
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="css/fontello.css" type="text/css" />
     <link href='https://fonts.googleapis.com/css?family=Lato|Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
 
@@ -167,6 +168,59 @@ if (isset($_POST['email'])) {
             color: red;
             margin-top: 5px;
             font-size: 0.875em;
+        }
+
+        form {
+            background: linear-gradient(to left,
+                    rgba(255, 255, 255, 0.5),
+                    rgba(255, 255, 255, 0.5));
+            width: 200vw;
+            max-width: 300px;
+            padding: 36px 24px;
+            border-radius: 15px;
+            box-shadow: 0px 8px 24px 0 rgba(54, 54, 54);
+            font-size: 20px;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .label_conteiner {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        input,
+        button {
+            background: linear-gradient(to left,
+                    rgba(255, 255, 255, 0.5),
+                    rgba(255, 255, 255, 0.5));
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0px 8px 24px 0 rgb(95, 94, 94);
+            padding: 12px 24px;
+            font-size: 24px;
+            color: #1b4864;
+        }
+
+        input {
+            width: 250px;
+        }
+
+        label {
+            color: rgba(70, 86, 116, 0.5);
+            cursor: text;
+            left: 24px;
+            opacity: 1;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        input:focus+label,
+        input:not(:placeholder-shown)+label {
+            left: 200px;
+            opacity: 0;
         }
     </style>
 
@@ -202,7 +256,7 @@ if (isset($_POST['email'])) {
 
                     <div class="label_conteiner">
                         <input id="age" type="text" placeholder=" " value="<?php echo isset($_SESSION['fr_age']) ? $_SESSION['fr_age'] : ''; ?>" name="age" />
-                        <label for="age">Wiek</label>
+                        <label for="age">Wiek (opcjonalnie)</label>
                         <?php if (isset($_SESSION['e_age'])): ?>
                             <div class="error"><?php echo $_SESSION['e_age'];
                                                 unset($_SESSION['e_age']); ?></div>
@@ -211,12 +265,12 @@ if (isset($_POST['email'])) {
 
                     <div class="label_conteiner">
                         <input id="country" type="text" placeholder=" " value="<?php echo isset($_SESSION['fr_country']) ? $_SESSION['fr_country'] : ''; ?>" name="country" />
-                        <label for="country">Kraj</label>
+                        <label for="country">Kraj (opcjonalnie)</label>
                     </div>
 
                     <div class="label_conteiner">
                         <input id="url" type="text" placeholder=" " value="<?php echo isset($_SESSION['fr_url']) ? $_SESSION['fr_url'] : ''; ?>" name="url" />
-                        <label for="url">Social media</label>
+                        <label for="url">Social media (opcjonalnie)</label>
                         <?php if (isset($_SESSION['e_url'])): ?>
                             <div class="error"><?php echo $_SESSION['e_url'];
                                                 unset($_SESSION['e_url']); ?></div>

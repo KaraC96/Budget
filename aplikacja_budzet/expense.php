@@ -9,8 +9,15 @@ if (!isset($_SESSION['logged_in'])) {
 require_once "connect.php";
 mysqli_report(MYSQLI_REPORT_STRICT);
 
+// Initialize variables to store user input and errors
 $success_message = "";
 $errors = [];
+
+$amount = '';
+$date_of_expense = date('Y-m-d'); // Set to today's date by default
+$expense_category = '';
+$payment_method = '';
+$expense_comment = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $everything_OK = true;
@@ -18,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user_id = $_SESSION['id'];
 
     // Validate amount
-    $amount = $_POST['amount'];
+    $amount = $_POST['amount'] ?? '';
 
     // Replace comma with a period if the user used a comma as the decimal separator
     $amount = str_replace(',', '.', $amount);
@@ -30,10 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Validate date
-    $date_of_expense = $_POST['date_of_expense'];
-    if (!DateTime::createFromFormat('Y-m-d', $date_of_expense)) {
+    $date_of_expense = $_POST['date_of_expense'] ?? date('Y-m-d'); // Default to today's date if not set
+    $date_format = 'Y-m-d';
+    $date_object = DateTime::createFromFormat($date_format, $date_of_expense);
+    if (!$date_object || $date_object->format($date_format) !== $date_of_expense) {
         $everything_OK = false;
-        $errors[] = "Podaj datę!";
+        $errors[] = "Podaj poprawną datę!";
     }
 
     // Validate category
@@ -51,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Validate comment
-    $expense_comment = $_POST['expense_comment'];
+    $expense_comment = $_POST['expense_comment'] ?? '';
     if (strlen($expense_comment) > 100) {
         $everything_OK = false;
         $errors[] = "Komentarz nie może przekraczać 100 znaków!";
@@ -64,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception(mysqli_connect_errno());
             }
 
+            // Check category and retrieve its id
             $expense_category_assigned_to_user_id = 0;
             $category_query = $connection->prepare("SELECT id FROM expenses_category_assigned_to_users WHERE name = ? AND user_id = ?");
             $category_query->bind_param('si', $expense_category, $user_id);
@@ -77,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception("Wybrana kategoria nie istnieje.");
             }
 
+            // Check payment method and retrieve its id
             $payment_method_assigned_to_user_id = 0;
             $payment_method_query = $connection->prepare("SELECT id FROM payment_methods_assigned_to_users WHERE name = ? AND user_id = ?");
             $payment_method_query->bind_param('si', $payment_method, $user_id);
@@ -92,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Add expense to the database
             $insert_expense = $connection->prepare("INSERT INTO expenses (user_id, expense_category_assigned_to_user_id, payment_method_assigned_to_user_id, amount, date_of_expense, expense_comment) VALUES (?, ?, ?, ?, ?, ?)");
-            $insert_expense->bind_param('iiidss', $user_id, $expense_category_assigned_to_user_id, $payment_method_assigned_to_user_id, $amount, $date_of_expense, $expense_comment); // 'd' for double
+            $insert_expense->bind_param('iiidss', $user_id, $expense_category_assigned_to_user_id, $payment_method_assigned_to_user_id, $amount, $date_of_expense, $expense_comment);
             if ($insert_expense->execute()) {
                 $success_message = "Wydatek został dodany pomyślnie!";
             } else {
@@ -107,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="pl">
 
@@ -117,7 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="keywords" content="przychody, wydatki, budżet, dom">
     <meta http-equiv="X-Ua-Compatible" content="IE=edge,chrome=1">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="main2.css">
     <link rel="stylesheet" href="css/fontello.css" type="text/css" />
     <link href='http://fonts.googleapis.com/css?family=Lato|Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
     <style>
@@ -240,45 +251,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <div class="input-group">
                         <label for="amount">Kwota:</label>
-                        <input id="amount" type="text" name="amount" placeholder="Kwota wydatku" />
+                        <input id="amount" type="text" name="amount" placeholder="Kwota wydatku" value="<?php echo htmlspecialchars($amount); ?>" />
                     </div>
 
                     <div class="input-group">
                         <label for="date_of_expense">Data:</label>
-                        <input id="date_of_expense" type="date" name="date_of_expense" placeholder="Data wydatku" />
+                        <input id="date_of_expense" type="date" name="date_of_expense" placeholder="Data wydatku" value="<?php echo htmlspecialchars($date_of_expense); ?>" />
                     </div>
 
                     <br>
                     <label>Kategoria wydatku:</br></br></label>
                     <div class="checkbox-container">
-                        <div><input type="radio" id="food" name="expense_category" value="Food"><label for="food">Jedzenie</label></div>
-                        <div><input type="radio" id="travel" name="expense_category" value="Travel"><label for="travel">Podróż</label></div>
-                        <div><input type="radio" id="clothes" name="expense_category" value="Clothes"><label for="clothes">Ubrania</label></div>
-                        <div><input type="radio" id="presents" name="expense_category" value="Presents"><label for="presents">Prezenty</label></div>
-                        <div><input type="radio" id="city_transport" name="expense_category" value="City transport"><label for="city_transport">Transport publiczny</label></div>
-                        <div><input type="radio" id="debt_repayment" name="expense_category" value="Debt repayment"><label for="debt_repayment">Spłata długu</label></div>
-                        <div><input type="radio" id="for_pension" name="expense_category" value="For pension"><label for="for_pension">Na emeryturę</label></div>
-                        <div><input type="radio" id="recreation" name="expense_category" value="Recreation"><label for="recreation">Rekreacja</label></div>
-                        <div><input type="radio" id="health" name="expense_category" value="Health"><label for="health">Zdrowie</label></div>
-                        <div><input type="radio" id="hygiene" name="expense_category" value="Hygiene"><label for="hygiene">Higiena</label></div>
-                        <div><input type="radio" id="savings" name="expense_category" value="Savings"><label for="savings">Oszczędności</label></div>
-                        <div><input type="radio" id="kids" name="expense_category" value="Kids"><label for="kids">Dzieci</label></div>
-                        <div><input type="radio" id="fuel" name="expense_category" value="Fuel"><label for="fuel">Paliwo</label></div>
-                        <div><input type="radio" id="fun" name="expense_category" value="Fun"><label for="fun">Zabawa</label></div>
-                        <div><input type="radio" id="taxi" name="expense_category" value="Taxi"><label for="taxi">Taxi</label></div>
-                        <div><input type="radio" id="another" name="expense_category" value="Another"><label for="another">Inne</label></div>
+                        <!-- Dynamic Radio Buttons with selected check -->
+                        <?php
+                        $categories = ["Food" => "Jedzenie", "Travel" => "Podróż", "Clothes" => "Ubrania", "Presents" => "Prezenty", "City transport" => "Transport publiczny", "Debt repayment" => "Spłata długu", "For pension" => "Na emeryturę", "Recreation" => "Rekreacja", "Health" => "Zdrowie", "Hygiene" => "Higiena", "Savings" => "Oszczędności", "Kids" => "Dzieci", "Fuel" => "Paliwo", "Fun" => "Zabawa", "Taxi" => "Taxi", "Another" => "Inne"];
+                        foreach ($categories as $value => $label):
+                        ?>
+                            <div>
+                                <input type="radio" id="<?php echo $value; ?>" name="expense_category" value="<?php echo $value; ?>" <?php if ($expense_category === $value) echo 'checked'; ?>>
+                                <label for="<?php echo $value; ?>"><?php echo $label; ?></label>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                     <br>
 
                     <label>Metoda płatności:</br></br></label>
                     <div class="checkbox-container">
-                        <div><input type="radio" id="credit_card" name="payment_method" value="Credit card"><label for="credit_card">Karta kredytowa</label></div>
-                        <div><input type="radio" id="cash" name="payment_method" value="Cash"><label for="cash">Gotówka</label></div>
-                        <div><input type="radio" id="debit_card" name="payment_method" value="Debit card"><label for="debit_card">Karta debetowa</label></div>
+                        <!-- Dynamic Radio Buttons with selected check -->
+                        <?php
+                        $payment_methods = ["Credit card" => "Karta kredytowa", "Cash" => "Gotówka", "Debit card" => "Karta debetowa"];
+                        foreach ($payment_methods as $value => $label):
+                        ?>
+                            <div>
+                                <input type="radio" id="<?php echo $value; ?>" name="payment_method" value="<?php echo $value; ?>" <?php if ($payment_method === $value) echo 'checked'; ?>>
+                                <label for="<?php echo $value; ?>"><?php echo $label; ?></label>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
 
                     <label for="expense_comment"></br>Komentarz:</br></br></label>
-                    <textarea id="expense_comment" type="text" name="expense_comment" rows="4" placeholder="Dodaj komentarz do wydatku (opcjonalnie)"></textarea>
+                    <textarea id="expense_comment" type="text" name="expense_comment" rows="4" placeholder="Dodaj komentarz do wydatku (opcjonalnie)"><?php echo htmlspecialchars($expense_comment); ?></textarea>
 
                     <div class="buttons">
                         <input type="submit" value="Dodaj wydatek">

@@ -196,7 +196,6 @@ td {
 
 #term {
 width: 400px;
-  height: 160px;
   text-align: left;
   padding: 15px 10px 0px 10px;
   border: medium solid #82b637;
@@ -213,4 +212,77 @@ width: 400px;
 	font-size: 24px;
 	color: white;
 }
+
+form {
+	padding: px 24px;
+	font-size: 20px;
+}
+
+input
+{
+	background: linear-gradient(
+		to left,
+		rgba(255, 255, 255, 0.5),
+		rgba(255, 255, 255, 0.5)
+	);
+	border: none;
+	padding: 12px 24px;
+	font-size: 18px;
+	color: #1b4864;
+}
+
+.label_cash{
+	width: 100px;
+	margin: 30px 20px 0px 20px;
+	float: left;
+}
+
+.label_input{
+	width: 300px;
+	float: left;
+	margin: 20px 0px 0px 0px;
+	font-size: 20px;
+}
+
+.label_button{
+	display: flex;
+	justify-content: center;
+	float: left;
+	margin: 30px 0px 0px 30%;	
+
+}
+
+.label_inne{
+	margin: 20px 0px 0px 0px;
+	float: left;
+	font-size: 20px;
+}
+
+.title{
+	font-size: 32px;
+	color: white;
+	letter-spacing: 2px;
+	font-weight: bold;
+	padding: 12px;
+}
+
+#przycisk{
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 22px;
+}
+
+#data{
+	width: 220px;
+}
+
+#cost{
+	margin: 20px 20px 0px 20px;
+}
+
+#inne{
+	font-size: 10px;
+	width: 220px;
+}
+
 

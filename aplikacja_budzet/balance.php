@@ -9,23 +9,69 @@ if (!isset($_SESSION['logged_in'])) {
 require_once "connect.php";
 mysqli_report(MYSQLI_REPORT_STRICT);
 
-$show_balance = false; // Flag to determine if the balance should be displayed
+$show_balance = false; // Flaga do określenia, czy bilans powinien być wyświetlony
+
+// Inicjalizacja zmiennych
+$start_date = '';
+$end_date = '';
+$period = 'current_month'; // Domyślny okres
+
+// Funkcja do translacji kategorii na język polski
+function translateCategory($categoryName)
+{
+    $translations = [
+        'Paycheck' => 'Wypłata',
+        'Investments' => 'Inwestycje',
+        'Passive income' => 'Dochód pasywny',
+        "Food" => "Jedzenie",
+        "Travel" => "Podróż",
+        "Clothes" => "Ubrania",
+        "Presents" => "Prezenty",
+        "City transport" => "Transport publiczny",
+        "Debt repayment" => "Spłata długu",
+        "For pension" => "Na emeryturę",
+        "Recreation" => "Rekreacja",
+        "Health" => "Zdrowie",
+        "Hygiene" => "Higiena",
+        "Savings" => "Oszczędności",
+        "Kids" => "Dzieci",
+        "Fuel" => "Paliwo",
+        "Fun" => "Zabawa",
+        "Taxi" => "Taxi"
+    ];
+
+    return $translations[$categoryName] ?? $categoryName; // Zwraca przetłumaczoną kategorię lub oryginalną nazwę, jeśli brak tłumaczenia
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $everything_OK = true;
     $errors = [];
 
-    $start_date = $_POST['start_date'];
-    $end_date = $_POST['end_date'];
+    $period = $_POST['period'] ?? 'current_month'; // Pobieramy wybrany okres
 
-    // Validate dates
-    if (!DateTime::createFromFormat('Y-m-d', $start_date) || !DateTime::createFromFormat('Y-m-d', $end_date)) {
+    // Ustalanie dat w zależności od wybranego okresu
+    if ($period == 'current_month') {
+        $start_date = date('Y-m-01'); // Pierwszy dzień bieżącego miesiąca
+        $end_date = date('Y-m-t'); // Ostatni dzień bieżącego miesiąca
+    } elseif ($period == 'previous_month') {
+        $start_date = date('Y-m-01', strtotime('first day of last month')); // Pierwszy dzień poprzedniego miesiąca
+        $end_date = date('Y-m-t', strtotime('last day of last month')); // Ostatni dzień poprzedniego miesiąca
+    } elseif ($period == 'custom') {
+        // Walidacja własnego zakresu dat
+        $start_date = $_POST['start_date'] ?? '';
+        $end_date = $_POST['end_date'] ?? '';
+
+        if (!DateTime::createFromFormat('Y-m-d', $start_date) || !DateTime::createFromFormat('Y-m-d', $end_date)) {
+            $everything_OK = false;
+            $errors[] = "Data musi być w formacie RRRR-MM-DD!";
+        }
+    } else {
         $everything_OK = false;
-        $errors[] = "Data musi być w formacie RRRR-MM-DD!";
+        $errors[] = "Nieprawidłowy wybór okresu!";
     }
 
     if ($everything_OK) {
-        $show_balance = true; // Set flag to true to show balance
+        $show_balance = true; // Ustawienie flagi na true, aby pokazać bilans
 
         try {
             $connection = new mysqli($host, $db_user, $db_password, $db_name);
@@ -33,12 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception(mysqli_connect_error());
             }
 
-            // SQL query to fetch and sum incomes by category
+            $user_id = $_SESSION['id']; // Pobieranie identyfikatora użytkownika z sesji
+
+            // SQL query to fetch and sum incomes by category for the current user
             $income_query = $connection->prepare("
                 SELECT ic.name AS category_name, SUM(i.amount) AS total_amount
                 FROM incomes i
                 JOIN incomes_category_assigned_to_users ic ON i.income_category_assigned_to_user_id = ic.id
-                WHERE i.date_of_income BETWEEN ? AND ?
+                WHERE i.user_id = ? AND i.date_of_income BETWEEN ? AND ?
                 GROUP BY ic.name
                 ORDER BY ic.name
             ");
@@ -47,16 +95,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception("Błąd przygotowania zapytania do przychodów: " . $connection->error);
             }
 
-            $income_query->bind_param('ss', $start_date, $end_date);
+            $income_query->bind_param('iss', $user_id, $start_date, $end_date);
             $income_query->execute();
             $income_result = $income_query->get_result();
 
-            // SQL query to fetch and sum expenses by category
+            // SQL query to fetch and sum expenses by category for the current user
             $expense_query = $connection->prepare("
                 SELECT ec.name AS category_name, SUM(e.amount) AS total_amount
                 FROM expenses e
                 JOIN expenses_category_assigned_to_users ec ON e.expense_category_assigned_to_user_id = ec.id
-                WHERE e.date_of_expense BETWEEN ? AND ?
+                WHERE e.user_id = ? AND e.date_of_expense BETWEEN ? AND ?
                 GROUP BY ec.name
                 ORDER BY ec.name
             ");
@@ -65,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception("Błąd przygotowania zapytania do wydatków: " . $connection->error);
             }
 
-            $expense_query->bind_param('ss', $start_date, $end_date);
+            $expense_query->bind_param('iss', $user_id, $start_date, $end_date);
             $expense_query->execute();
             $expense_result = $expense_query->get_result();
 
@@ -74,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $total_income = 0;
 
             while ($row = $income_result->fetch_assoc()) {
+                $row['category_name'] = translateCategory($row['category_name']); // Translacja kategorii na polski
                 $incomes[] = $row;
                 $total_income += $row['total_amount'];
             }
@@ -82,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $total_expense = 0;
 
             while ($row = $expense_result->fetch_assoc()) {
+                $row['category_name'] = translateCategory($row['category_name']); // Translacja kategorii na polski
                 $expenses[] = $row;
                 $total_expense += $row['total_amount'];
             }
@@ -105,7 +155,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="keywords" content="bilans, budżet, przychody, wydatki">
     <meta http-equiv="X-Ua-Compatible" content="IE=edge,chrome=1">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="main2.css">
     <link rel="stylesheet" href="css/fontello.css" type="text/css" />
     <link href='http://fonts.googleapis.com/css?family=Lato|Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
     <style>
@@ -139,15 +188,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div id="content1">
                 <form method="post" autocomplete="off">
                     <div id="term">
-                        <label for="start_date">Data początkowa:</label>
-                        <input id="start_date" type="date" name="start_date" required /> </br>
-                        <label for="end_date">Data końcowa:</label>
-                        <input id="end_date" type="date" name="end_date" required /> </br>
+                        <label>Wybierz okres:</label><br><br>
+                        <input type="radio" id="current_month" name="period" value="current_month" <?php if ($period === 'current_month') echo 'checked'; ?>>
+                        <label for="current_month">Bieżący miesiąc</label><br>
+                        <input type="radio" id="previous_month" name="period" value="previous_month" <?php if ($period === 'previous_month') echo 'checked'; ?>>
+                        <label for="previous_month">Poprzedni miesiąc</label><br>
+                        <input type="radio" id="custom" name="period" value="custom" <?php if ($period === 'custom') echo 'checked'; ?>>
+                        <label for="custom">Niestandardowy okres</label><br></br>
+
+                        <div id="custom_dates" style="display: <?php echo $period === 'custom' ? 'block' : 'none'; ?>;">
+                            <label for="start_date">Data początkowa:</label>
+                            <input id="start_date" type="date" name="start_date" value="<?php echo htmlspecialchars($start_date); ?>" /> </br>
+                            <label for="end_date">Data końcowa:</label>
+                            <input id="end_date" type="date" name="end_date" value="<?php echo htmlspecialchars($end_date); ?>" /> </br>
+                        </div>
+
                         <div class="buttons">
                             <input type="submit" value="Pokaż bilans">
                         </div>
                     </div>
                 </form>
+
+                <script>
+                    // Show/hide custom date inputs based on selected period
+                    document.querySelectorAll('input[name="period"]').forEach((elem) => {
+                        elem.addEventListener('change', function() {
+                            if (this.value === 'custom') {
+                                document.getElementById('custom_dates').style.display = 'block';
+                            } else {
+                                document.getElementById('custom_dates').style.display = 'none';
+                            }
+                        });
+                    });
+                </script>
 
                 <?php if ($show_balance): ?>
                     <!-- Displaying selected date range -->
