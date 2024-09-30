@@ -167,7 +167,65 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 5px;
             font-family: 'Lato', sans-serif;
         }
+
+        .thumb-up {
+            font-size: 2rem;
+            color: green;
+        }
+
+        .thumb-down {
+            font-size: 2rem;
+            color: red;
+        }
+
+        #expenseChart {
+            width: 500px;
+            height: 500px;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .result {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .tables {
+            margin-top: 30px;
+        }
+
+        .title_table {
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            text-align: center;
+        }
+
+        th,
+        td {
+            padding: 10px;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Załaduj bibliotekę Chart.js -->
 </head>
 
 <body>
@@ -184,8 +242,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </ul>
             </nav>
         </header>
+
         <main>
             <div id="content1">
+                <!-- Form -->
                 <form method="post" autocomplete="off">
                     <div id="term">
                         <label>Wybierz okres:</label><br><br>
@@ -209,70 +269,116 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                 </form>
 
-                <script>
-                    // Show/hide custom date inputs based on selected period
-                    document.querySelectorAll('input[name="period"]').forEach((elem) => {
-                        elem.addEventListener('change', function() {
-                            if (this.value === 'custom') {
-                                document.getElementById('custom_dates').style.display = 'block';
-                            } else {
-                                document.getElementById('custom_dates').style.display = 'none';
-                            }
-                        });
-                    });
-                </script>
-
+                <!-- Wynik porównania przychodów i wydatków -->
                 <?php if ($show_balance): ?>
-                    <!-- Displaying selected date range -->
-                    <div class="date_range">
-                        <p><strong>Wybrany okres:</strong> <?php echo htmlspecialchars($start_date); ?> - <?php echo htmlspecialchars($end_date); ?></p>
+                    <div class="result">
+                        <?php if ($total_income >= $total_expense): ?>
+                            <p>Gratulacje! Masz nadwyżkę: <strong><?php echo number_format($total_income - $total_expense, 2, ',', ' '); ?> zł</strong></p>
+                            <span class="thumb-up">&#128077;</span> <!-- Kciuk w górę -->
+                        <?php else: ?>
+                            <p>Masz deficyt: <strong><?php echo number_format($total_expense - $total_income, 2, ',', ' '); ?> zł</strong></p>
+                            <span class="thumb-down">&#128078;</span> <!-- Kciuk w dół -->
+                        <?php endif; ?>
                     </div>
 
-                    <!-- Displaying incomes -->
-                    <div class="title_table">Przychody</div>
-                    <table id="income">
-                        <tr>
-                            <th>Kategoria</th>
-                            <th>Kwota</th>
-                        </tr>
-
-                        <?php foreach ($incomes as $row): ?>
+                    <!-- Tabele przychodów i wydatków -->
+                    <div class="tables">
+                        <div class="title_table">Przychody</div>
+                        <table id="income">
                             <tr>
-                                <td><?php echo htmlspecialchars($row['category_name']); ?></td>
-                                <td><?php echo number_format($row['total_amount'], 2, ',', ' '); ?></td>
+                                <th>Kategoria</th>
+                                <th>Kwota</th>
                             </tr>
-                        <?php endforeach; ?>
 
-                        <tr>
-                            <td><strong>Razem:</strong></td>
-                            <td><strong><?php echo number_format($total_income, 2, ',', ' '); ?></strong></td>
-                        </tr>
-                    </table>
+                            <?php foreach ($incomes as $row): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($row['category_name']); ?></td>
+                                    <td><?php echo number_format($row['total_amount'], 2, ',', ' '); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
 
-                    <!-- Displaying expenses -->
-                    <div class="title_table">Wydatki</div>
-                    <table id="expense">
-                        <tr>
-                            <th>Kategoria</th>
-                            <th>Kwota</th>
-                        </tr>
-
-                        <?php foreach ($expenses as $row): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($row['category_name']); ?></td>
-                                <td><?php echo number_format($row['total_amount'], 2, ',', ' '); ?></td>
+                                <td><strong>Razem:</strong></td>
+                                <td><strong><?php echo number_format($total_income, 2, ',', ' '); ?></strong></td>
                             </tr>
-                        <?php endforeach; ?>
+                        </table>
 
-                        <tr>
-                            <td><strong>Razem:</strong></td>
-                            <td><strong><?php echo number_format($total_expense, 2, ',', ' '); ?></strong></td>
-                        </tr>
-                    </table>
+                        <div class="title_table">Wydatki</div>
+                        <table id="expense">
+                            <tr>
+                                <th>Kategoria</th>
+                                <th>Kwota</th>
+                            </tr>
+
+                            <?php foreach ($expenses as $row): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($row['category_name']); ?></td>
+                                    <td><?php echo number_format($row['total_amount'], 2, ',', ' '); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+
+                            <tr>
+                                <td><strong>Razem:</strong></td>
+                                <td><strong><?php echo number_format($total_expense, 2, ',', ' '); ?></strong></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Wykres kołowy wydatków -->
+                    <div class="chart-container">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+
                 <?php endif; ?>
             </div>
         </main>
     </div>
+
+    <script>
+        // Funkcja do pokazywania/ukrywania niestandardowego okresu
+        document.querySelectorAll('input[name="period"]').forEach((elem) => {
+            elem.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    document.getElementById('custom_dates').style.display = 'block';
+                } else {
+                    document.getElementById('custom_dates').style.display = 'none';
+                }
+            });
+        });
+
+        <?php if ($show_balance): ?>
+            // Dane do wykresu kołowego z kategorii wydatków
+            var expenseLabels = <?php echo json_encode(array_column($expenses, 'category_name')); ?>;
+            var expenseData = <?php echo json_encode(array_column($expenses, 'total_amount')); ?>;
+
+            var ctx = document.getElementById('expenseChart').getContext('2d');
+            var expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: expenseLabels,
+                    datasets: [{
+                        data: expenseData,
+                        backgroundColor: [
+                            '#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#ff9f40', '#4bc0c0', '#9966ff'
+                        ]
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: false, // Ustawienie stałych wymiarów
+                    plugins: {
+                        legend: {
+                            position: 'right', // Ustawienie legendy po prawej stronie
+                            labels: {
+                                boxWidth: 20,
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        <?php endif; ?>
+    </script>
 </body>
 
 </html>
